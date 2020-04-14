@@ -126,32 +126,6 @@ public:
 	}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 private:
 	bool ownData;
 };

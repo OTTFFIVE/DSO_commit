@@ -54,7 +54,8 @@ inline int getdir (std::string dir, std::vector<std::string> &files)
         return -1;
     }
 
-    while ((dirp = readdir(dp)) != NULL) {
+    while ((dirp = readdir(dp)) != NULL)
+    {
     	std::string name = std::string(dirp->d_name);
 
     	if(name != "." && name != "..")
@@ -65,8 +66,9 @@ inline int getdir (std::string dir, std::vector<std::string> &files)
 
     std::sort(files.begin(), files.end());
 
-    if(dir.at( dir.length() - 1 ) != '/') dir = dir+"/";
-	for(unsigned int i=0;i<files.size();i++)
+    if(dir.at( dir.length() - 1 ) != '/')
+        dir = dir+"/";
+	for(unsigned int i=0; i<files.size(); i++)
 	{
 		if(files[i].at(0) != '/')
 			files[i] = dir + files[i];
@@ -115,9 +117,6 @@ public:
 		isZipped = (path.length()>4 && path.substr(path.length()-4) == ".zip");
 
 
-
-
-
 		if(isZipped)
 		{
 #if HAS_ZIPLIB
@@ -131,7 +130,7 @@ public:
 
 			files.clear();
 			int numEntries = zip_get_num_entries(ziparchive, 0);
-			for(int k=0;k<numEntries;k++)
+			for(int k=0; k<numEntries; k++)
 			{
 				const char* name = zip_get_name(ziparchive, k,  ZIP_FL_ENC_STRICT);
 				std::string nstr = std::string(name);
@@ -147,7 +146,7 @@ public:
 #endif
 		}
 		else
-			getdir (path, files);
+			getdir(path, files);
 
 
 		undistort = Undistort::getUndistorterForFile(calibFile, gammaFile, vignetteFile);
@@ -163,6 +162,7 @@ public:
 		printf("ImageFolderReader: got %d files in %s!\n", (int)files.size(), path.c_str());
 
 	}
+
 	~ImageFolderReader()
 	{
 #if HAS_ZIPLIB
@@ -238,7 +238,6 @@ public:
 	// undistorter. [0] always exists, [1-2] only when MT is enabled.
 	Undistort* undistort;
 private:
-
 
 	MinimalImageB* getImageRaw_internal(int id, int unused)
 	{
@@ -319,15 +318,24 @@ private:
 		tr.close();
 
 		// check if exposures are correct, (possibly skip)
-		bool exposuresGood = ((int)exposures.size()==(int)getNumImages()) ;
-		for(int i=0;i<(int)exposures.size();i++)
+		bool exposuresGood = ((int)exposures.size()==(int)getNumImages());
+
+		for(int i=0; i<(int)exposures.size(); i++)
 		{
 			if(exposures[i] == 0)
 			{
 				// fix!
-				float sum=0,num=0;
-				if(i>0 && exposures[i-1] > 0) {sum += exposures[i-1]; num++;}
-				if(i+1<(int)exposures.size() && exposures[i+1] > 0) {sum += exposures[i+1]; num++;}
+				float sum=0, num=0;
+				if(i>0 && exposures[i-1] > 0)
+				{
+				    sum += exposures[i-1];
+				    num++;
+				}
+				if(i+1<(int)exposures.size() && exposures[i+1] > 0)
+				{
+				    sum += exposures[i+1];
+				    num++;
+				}
 
 				if(num>0)
 					exposures[i] = sum/num;

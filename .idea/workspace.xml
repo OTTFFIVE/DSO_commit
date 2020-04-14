@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated>
+      <config projectName="DSO" targetName="dso" />
+      <config projectName="DSO" targetName="dso_dataset" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Default" GENERATION_DIR="$PROJECT_DIR$/build" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="3c88bb29-966c-4cd1-8abc-4a8bc4bc4ae2" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitmodules" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/launch.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/FullSystem/CoarseInitializer.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/FullSystem/CoarseInitializer.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main_dso_pangolin.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main_dso_pangolin.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/util/DatasetReader.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/DatasetReader.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/util/MinimalImage.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/MinimalImage.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/util/Undistort.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/Undistort.cpp" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Default" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectId" id="1W9afKYQ57KamIJNo3PEjhM6noK" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="editor.preferences.appearance" />
+  </component>
+  <component name="RunManager" selected="CMake Application.dso">
+    <configuration default="true" type="Applet" factoryName="Applet">
+      <option name="WIDTH" value="400" />
+      <option name="HEIGHT" value="300" />
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <module />
+      <method />
+    </configuration>
+    <configuration default="true" type="Application" factoryName="Application">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="VM_PARAMETERS" />
+      <option name="PROGRAM_PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="JUnit" factoryName="JUnit">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <module name="" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="PACKAGE_NAME" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="METHOD_NAME" />
+      <option name="TEST_OBJECT" value="class" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="singleModule" />
+      </option>
+      <envs />
+      <patterns />
+      <method />
+    </configuration>
+    <configuration default="true" type="Remote" factoryName="Remote">
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="false" />
+      <option name="SHMEM_ADDRESS" value="javadebug" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="5005" />
+      <method />
+    </configuration>
+    <configuration default="true" type="TestNG" factoryName="TestNG">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <module name="" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" />
+      <option name="SUITE_NAME" />
+      <option name="PACKAGE_NAME" />
+      <option name="MAIN_CLASS_NAME" />
+      <option name="METHOD_NAME" />
+      <option name="GROUP_NAME" />
+      <option name="TEST_OBJECT" value="CLASS" />
+      <option name="VM_PARAMETERS" value="-ea" />
+      <option name="PARAMETERS" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
+      <option name="OUTPUT_DIRECTORY" />
+      <option name="ANNOTATION_TYPE" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <option name="TEST_SEARCH_SCOPE">
+        <value defaultName="singleModule" />
+      </option>
+      <option name="USE_DEFAULT_REPORTERS" value="false" />
+      <option name="PROPERTIES_FILE" />
+      <envs />
+      <properties />
+      <listeners />
+      <method />
+    </configuration>
+    <configuration default="true" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType" factoryName="Plugin">
+      <module name="" />
+      <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -XX:MaxPermSize=250m -ea" />
+      <option name="PROGRAM_PARAMETERS" />
+      <predefined_log_file id="idea.log" enabled="true" />
+      <method />
+    </configuration>
+    <configuration name="dso" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="DSO" TARGET_NAME="dso" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="dso_dataset" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="DSO" TARGET_NAME="dso_dataset" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="DSO" RUN_TARGET_NAME="dso_dataset">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="CMake Application.dso" />
+      <item itemvalue="CMake Application.dso_dataset" />
+    </list>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3c88bb29-966c-4cd1-8abc-4a8bc4bc4ae2" name="Default Changelist" comment="" />
+      <created>1578564366569</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1578564366569</updated>
+      <workItem from="1578564367897" duration="5522000" />
+      <workItem from="1578645766096" duration="376000" />
+      <workItem from="1578620545387" duration="540000" />
+      <workItem from="1578621299626" duration="234000" />
+      <workItem from="1578622020589" duration="470000" />
+      <workItem from="1578622498207" duration="89000" />
+      <workItem from="1578623042776" duration="10614000" />
+      <workItem from="1578654722555" duration="171000" />
+      <workItem from="1578886188394" duration="174000" />
+      <workItem from="1583227199622" duration="132000" />
+      <workItem from="1584496449259" duration="3837000" />
+      <workItem from="1584522349168" duration="5499000" />
+      <workItem from="1584582721141" duration="5401000" />
+      <workItem from="1584596757568" duration="608000" />
+      <workItem from="1584599246468" duration="1995000" />
+      <workItem from="1584669498342" duration="659000" />
+      <workItem from="1584700466673" duration="3202000" />
+      <workItem from="1586833049579" duration="1133000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="781" y="377" key="#com.intellij.ide.actions.DebugLogConfigureAction" timestamp="1584583065420">
+      <screen x="59" y="24" width="1861" height="1056" />
+    </state>
+    <state x="781" y="377" key="#com.intellij.ide.actions.DebugLogConfigureAction/59.24.1861.1056@59.24.1861.1056" timestamp="1584583065420" />
+    <state x="776" y="297" key="FileChooserDialogImpl" timestamp="1584671728591">
+      <screen x="59" y="24" width="1861" height="1056" />
+    </state>
+    <state x="776" y="297" key="FileChooserDialogImpl/59.24.1861.1056@59.24.1861.1056" timestamp="1584671728591" />
+    <state x="780" y="297" key="FileChooserDialogImpl/65.24.1855.1056@65.24.1855.1056" timestamp="1578886360545" />
+    <state x="598" y="237" key="SettingsEditor" timestamp="1584584126349">
+      <screen x="59" y="24" width="1861" height="1056" />
+    </state>
+    <state x="598" y="237" key="SettingsEditor/59.24.1861.1056@59.24.1861.1056" timestamp="1584584126349" />
+    <state x="486" y="174" key="SettingsEditor/65.24.1855.1056@65.24.1855.1056" timestamp="1578645314424" />
+    <state x="186" y="171" width="1201" height="656" key="find.popup" timestamp="1584584655755">
+      <screen x="59" y="24" width="1861" height="1056" />
+    </state>
+    <state x="186" y="171" width="1201" height="656" key="find.popup/59.24.1861.1056@59.24.1861.1056" timestamp="1584584655755" />
+    <state x="192" y="171" width="1197" height="656" key="find.popup/65.24.1855.1056@65.24.1855.1056" timestamp="1578651423477" />
+    <state x="1040" y="461" width="716" height="299" key="org.intellij.images.editor.actions.BackgroundImageDialog" timestamp="1584583138911">
+      <screen x="59" y="24" width="1861" height="1056" />
+    </state>
+    <state x="1040" y="461" width="716" height="299" key="org.intellij.images.editor.actions.BackgroundImageDialog/59.24.1861.1056@59.24.1861.1056" timestamp="1584583138911" />
+  </component>
+</project>

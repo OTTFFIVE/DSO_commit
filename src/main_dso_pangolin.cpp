@@ -309,10 +309,17 @@ void parseArgument(char* arg)
 		if(option==1)
 		{
 			debugSaveImages = true;
-			if(42==system("rm -rf images_out")) printf("system call returned 42 - what are the odds?. This is only here to shut up the compiler.\n");
-			if(42==system("mkdir images_out")) printf("system call returned 42 - what are the odds?. This is only here to shut up the compiler.\n");
-			if(42==system("rm -rf images_out")) printf("system call returned 42 - what are the odds?. This is only here to shut up the compiler.\n");
-			if(42==system("mkdir images_out")) printf("system call returned 42 - what are the odds?. This is only here to shut up the compiler.\n");
+			if(42==system("rm -rf images_out"))
+			    printf("system call returned 42 - what are the odds?. This is only here to shut up the compiler.\n");
+
+			if(42==system("mkdir images_out"))
+			    printf("system call returned 42 - what are the odds?. This is only here to shut up the compiler.\n");
+
+			if(42==system("rm -rf images_out"))
+			    printf("system call returned 42 - what are the odds?. This is only here to shut up the compiler.\n");
+
+			if(42==system("mkdir images_out"))
+			    printf("system call returned 42 - what are the odds?. This is only here to shut up the compiler.\n");
 			printf("SAVE IMAGES!\n");
 		}
 		return;
@@ -352,16 +359,14 @@ void parseArgument(char* arg)
 int main( int argc, char** argv )
 {
 	//setlocale(LC_ALL, "");
-	for(int i=1; i<argc;i++)
+	for(int i=1; i<argc; i++)
 		parseArgument(argv[i]);
 
 	// hook crtl+C.
 	boost::thread exThread = boost::thread(exitThread);
 
-
-	ImageFolderReader* reader = new ImageFolderReader(source,calib, gammaCalib, vignette);
+	ImageFolderReader* reader = new ImageFolderReader(source, calib, gammaCalib, vignette);
 	reader->setGlobalCalibration();
-
 
 
 	if(setting_photometricCalibration > 0 && reader->getPhotometricGamma() == 0)
@@ -369,8 +374,6 @@ int main( int argc, char** argv )
 		printf("ERROR: dont't have photometric calibation. Need to use commandline options mode=1 or mode=2 ");
 		exit(1);
 	}
-
-
 
 
 	int lstart=start;
@@ -387,15 +390,9 @@ int main( int argc, char** argv )
 	}
 
 
-
 	FullSystem* fullSystem = new FullSystem();
 	fullSystem->setGammaFunction(reader->getPhotometricGamma());
 	fullSystem->linearizeOperation = (playbackSpeed==0);
-
-
-
-
-
 
 
     IOWrap::PangolinDSOViewer* viewer = 0;
@@ -406,11 +403,8 @@ int main( int argc, char** argv )
     }
 
 
-
     if(useSampleOutput)
         fullSystem->outputWrapper.push_back(new IOWrap::SampleOutputWrapper());
-
-
 
 
     // to make MacOS happy: run this in dedicated thread -- and use this one to run the GUI.
@@ -435,7 +429,7 @@ int main( int argc, char** argv )
 
         std::vector<ImageAndExposure*> preloadedImages;
         if(preload)
-        {
+        {//读图像,去除光度参数
             printf("LOADING ALL IMAGES!\n");
             for(int ii=0;ii<(int)idsToPlay.size(); ii++)
             {
@@ -473,7 +467,8 @@ int main( int argc, char** argv )
             bool skipFrame=false;
             if(playbackSpeed!=0)
             {
-                struct timeval tv_now; gettimeofday(&tv_now, NULL);
+                struct timeval tv_now;
+                gettimeofday(&tv_now, NULL);
                 double sSinceStart = sInitializerOffset + ((tv_now.tv_sec-tv_start.tv_sec) + (tv_now.tv_usec-tv_start.tv_usec)/(1000.0f*1000.0f));
 
                 if(sSinceStart < timesToPlayAt[ii])
@@ -486,9 +481,9 @@ int main( int argc, char** argv )
             }
 
 
-
-            if(!skipFrame) fullSystem->addActiveFrame(img, i);
-
+            //系统入口
+            if(!skipFrame)
+                fullSystem->addActiveFrame(img, i);
 
 
 
@@ -572,7 +567,6 @@ int main( int argc, char** argv )
 		ow->join();
 		delete ow;
 	}
-
 
 
 	printf("DELETE FULLSYSTEM!\n");

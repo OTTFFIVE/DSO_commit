@@ -298,8 +298,7 @@ Undistort* Undistort::getUndistorterForFile(std::string configFilename, std::str
 	//* 下面三种具体模型, 是针对没有指明模型名字的, 只给了参数
     // for backwards-compatibility: Use RadTan model for 8 parameters.
 	if(std::sscanf(l1.c_str(), "%f %f %f %f %f %f %f %f",
-			&ic[0], &ic[1], &ic[2], &ic[3],
-			&ic[4], &ic[5], &ic[6], &ic[7]) == 8)
+			&ic[0], &ic[1], &ic[2], &ic[3], &ic[4], &ic[5], &ic[6], &ic[7]) == 8)
 	{
         printf("found RadTan (OpenCV) camera model, building rectifier.\n");
         u = new UndistortRadTan(configFilename.c_str(), true);
@@ -307,30 +306,34 @@ Undistort* Undistort::getUndistorterForFile(std::string configFilename, std::str
     }
 
     // for backwards-compatibility: Use Pinhole / FoV model for 5 parameter.
-    else if(std::sscanf(l1.c_str(), "%f %f %f %f %f",
-			&ic[0], &ic[1], &ic[2], &ic[3], &ic[4]) == 5)
+    else if(std::sscanf(l1.c_str(), "%f %f %f %f %f", &ic[0], &ic[1], &ic[2], &ic[3], &ic[4]) == 5)
 	{
 		if(ic[4]==0)  // 没有FOV的畸变参数, 只有pinhole
 		{
 			printf("found PINHOLE camera model, building rectifier.\n");
             u = new UndistortPinhole(configFilename.c_str(), true);
-			if(!u->isValid()) {delete u; return 0; }
+			if(!u->isValid())
+			{
+			    delete u;
+			    return 0;
+			}
 		}
 		else // pinhole + FOV , atan
 		{
 			printf("found ATAN camera model, building rectifier.\n");
             u = new UndistortFOV(configFilename.c_str(), true);
-			if(!u->isValid()) {delete u; return 0; }
+			if(!u->isValid())
+			{
+			    delete u;
+			    return 0;
+			}
 		}
 	}
-
-
 
 	//* 以下是指明了相机模型的几种选择
     // clean model selection implementation.
     else if(std::sscanf(l1.c_str(), "KannalaBrandt %f %f %f %f %f %f %f %f",
-            &ic[0], &ic[1], &ic[2], &ic[3],
-            &ic[4], &ic[5], &ic[6], &ic[7]) == 8)
+            &ic[0], &ic[1], &ic[2], &ic[3], &ic[4], &ic[5], &ic[6], &ic[7]) == 8)
     {
         u = new UndistortKB(configFilename.c_str(), false);
         if(!u->isValid()) {delete u; return 0; }
@@ -338,8 +341,7 @@ Undistort* Undistort::getUndistorterForFile(std::string configFilename, std::str
 
 
     else if(std::sscanf(l1.c_str(), "RadTan %f %f %f %f %f %f %f %f",
-            &ic[0], &ic[1], &ic[2], &ic[3],
-            &ic[4], &ic[5], &ic[6], &ic[7]) == 8)
+            &ic[0], &ic[1], &ic[2], &ic[3], &ic[4], &ic[5], &ic[6], &ic[7]) == 8)
     {
         u = new UndistortRadTan(configFilename.c_str(), false);
         if(!u->isValid()) {delete u; return 0; }
@@ -347,8 +349,7 @@ Undistort* Undistort::getUndistorterForFile(std::string configFilename, std::str
 
 
     else if(std::sscanf(l1.c_str(), "EquiDistant %f %f %f %f %f %f %f %f",
-            &ic[0], &ic[1], &ic[2], &ic[3],
-            &ic[4], &ic[5], &ic[6], &ic[7]) == 8)
+            &ic[0], &ic[1], &ic[2], &ic[3], &ic[4], &ic[5], &ic[6], &ic[7]) == 8)
     {
         u = new UndistortEquidistant(configFilename.c_str(), false);
         if(!u->isValid()) {delete u; return 0; }
@@ -356,23 +357,25 @@ Undistort* Undistort::getUndistorterForFile(std::string configFilename, std::str
 
 
     else if(std::sscanf(l1.c_str(), "FOV %f %f %f %f %f",
-            &ic[0], &ic[1], &ic[2], &ic[3],
-            &ic[4]) == 5)
+            &ic[0], &ic[1], &ic[2], &ic[3], &ic[4]) == 5)
     {
         u = new UndistortFOV(configFilename.c_str(), false);
-        if(!u->isValid()) {delete u; return 0; }
+        if(!u->isValid())
+        {
+            delete u;
+            return 0;
+        }
     }
-
-
     else if(std::sscanf(l1.c_str(), "Pinhole %f %f %f %f %f",
-            &ic[0], &ic[1], &ic[2], &ic[3],
-            &ic[4]) == 5)
+            &ic[0], &ic[1], &ic[2], &ic[3], &ic[4]) == 5)
     {
         u = new UndistortPinhole(configFilename.c_str(), false);
-        if(!u->isValid()) {delete u; return 0; }
+        if(!u->isValid())
+        {
+            delete u;
+            return 0;
+        }
     }
-
-
     else
     {
         printf("could not read calib file! exit.");

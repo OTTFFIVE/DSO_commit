@@ -137,7 +137,7 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 		resetPoints(lvl); // 这里对顶层进行初始化!
 //[ ***step 4*** ] 迭代之前计算能量, Hessian等
 		Vec3f resOld = calcResAndGS(lvl, H, b, Hsc, bsc, refToNew_current, refToNew_aff_current, false);
-		applyStep(lvl); // 新的能量付给旧的
+		applyStep(lvl); // 新的能量赋给旧的
 
 		float lambda = 0.1;
 		float eps = 1e-4;
@@ -230,9 +230,9 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 				resOld = resNew;
 				refToNew_aff_current = refToNew_aff_new;
 				refToNew_current = refToNew_new;
-				applyStep(lvl);
+				applyStep(lvl);//更新逆深度值
 				optReg(lvl); // 更新iR
-				lambda *= 0.5;
+				lambda *= 0.5;//
 				fails=0;
 				if(lambda < 0.0001) lambda = 0.0001;
 			}
@@ -405,7 +405,7 @@ Vec3f CoarseInitializer::calcResAndGS(
 			int dy = patternP[idx][1];
 
 			//! Pj' = R*(X/Z, Y/Z, 1) + t/Z, 变换到新的点, 深度仍然使用Host帧的!
-			Vec3f pt = RKi * Vec3f(point->u+dx, point->v+dy, 1) + t*point->idepth_new; 
+			Vec3f pt = RKi * Vec3f(point->u+dx, point->v+dy, 1) + t*point->idepth_new; //对应公式(3)
 			// 归一化坐标 Pj
 			float u = pt[0] / pt[2];
 			float v = pt[1] / pt[2];
@@ -903,14 +903,14 @@ void CoarseInitializer::setFirst(	CalibHessian* HCalib, FrameHessian* newFrameHe
 	}
 	delete[] statusMap;
 	delete[] statusMapB;
-//[ ***step 4*** ] 计算点的最近邻和父点
+//[ ***step 4*** ] 计算点的最近邻和父点,flann方法
 	makeNN();
 
 	// 参数初始化
 
 	thisToNext=SE3();
-	snapped = false;
-	frameID = snappedAt = 0;
+	snapped = false;//位移是否满足要求
+	frameID = snappedAt = 0;//记录在哪一帧满足的位移
 
 	for(int i=0;i<pyrLevelsUsed;i++)
 		dGrads[i].setZero();
