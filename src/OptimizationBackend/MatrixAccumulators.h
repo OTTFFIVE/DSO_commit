@@ -1090,7 +1090,7 @@ public:
 
 	  num+=4;
 	  numIn1++;  // 乘一次加一
-	  shiftUp(false);
+	  shiftUp(false);//判断是否进位
   }
 
 

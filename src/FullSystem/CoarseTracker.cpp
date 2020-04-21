@@ -347,6 +347,7 @@ void CoarseTracker::calcGSSSE(int lvl, Mat88 &H_out, Vec8 &b_out, const SE3 &ref
 	H_out = acc.H.topLeftCorner<8,8>().cast<double>() * (1.0f/n);
 	b_out = acc.H.topRightCorner<8,1>().cast<double>() * (1.0f/n);
 
+	//保证数值在同一数量级
 	H_out.block<8,3>(0,0) *= SCALE_XI_ROT;   // bug : 平移旋转顺序错了
 	H_out.block<8,3>(0,3) *= SCALE_XI_TRANS;
 	H_out.block<8,1>(0,6) *= SCALE_A;
@@ -372,6 +373,7 @@ Vec6 CoarseTracker::calcRes(int lvl, const SE3 &refToNew, AffLight aff_g2l, floa
 	int numTermsInWarped = 0;
 	int numSaturated=0;
 
+	//不同的内参是变化的,每一次都重新取一次
 	int wl = w[lvl];
 	int hl = h[lvl];
 	Eigen::Vector3f* dINewl = newFrame->dIp[lvl];
@@ -410,7 +412,7 @@ Vec6 CoarseTracker::calcRes(int lvl, const SE3 &refToNew, AffLight aff_g2l, floa
 	float* lpc_color = pc_color[lvl];
 
 
-	for(int i=0;i<nl;i++)
+	for(int i=0;i<nl;i++)//all points
 	{
 		float id = lpc_idepth[i];
 		float x = lpc_u[i];
@@ -495,7 +497,7 @@ Vec6 CoarseTracker::calcRes(int lvl, const SE3 &refToNew, AffLight aff_g2l, floa
 			numTermsInWarped++;
 		}
 	}
-	//* 16字节对齐, 填充上
+	//* 16字节对齐, 填充上,
 	while(numTermsInWarped%4!=0) 
 	{
 		buf_warped_idepth[numTermsInWarped] = 0;
@@ -576,7 +578,51 @@ bool CoarseTracker::trackNewestCoarse(
 
 	bool haveRepeated = false;  // 是否重复计算了
 
-	//* 使用金字塔进行跟踪, 从顶层向下开始跟踪
+
+    IMUPreintegrator IMU_preintegrator;
+    double time_start = pic_time_stamp[lastRef->shell->incoming_id];
+    double time_end = pic_time_stamp[newFrame->shell->incoming_id];
+// 	LOG(INFO)<<"lastRef->shell->incoming_id: "<<lastRef->shell->incoming_id<<" newFrame->shell->incoming_id: "<<newFrame->shell->incoming_id;
+
+    int index;
+// 	LOG(INFO)<<"pic_time_stamp.size(): "<<pic_time_stamp.size();
+// 	LOG(INFO)<<std::fixed<<std::setprecision(9)<<"time_start: "<<time_start<<" time_end: "<<time_start<<" dt: "<<time_end - time_start;
+
+    for(int i=0; i<imu_time_stamp.size(); ++i)
+    {
+        if(imu_time_stamp[i]>time_start||fabs(time_start-imu_time_stamp[i])<0.001)
+        {
+            index = i;
+            break;
+        }
+    }
+
+    while(1)
+    {
+        double delta_t;
+        if(imu_time_stamp[index+1]<time_end)
+            delta_t = imu_time_stamp[index+1]-imu_time_stamp[index];
+        else {
+            delta_t = time_end - imu_time_stamp[index];
+            if(delta_t<0.000001)break;
+        }
+
+        IMU_preintegrator.update(m_gry[index]-lastRef->bias_g, m_acc[index]-lastRef->bias_a, delta_t);
+
+        if(imu_time_stamp[index+1]>=time_end)
+            break;
+        index++;
+    }
+
+    std::vector<double> imu_track_w(coarsestLvl,0);
+    imu_track_w[0] = imu_weight_tracker;
+    imu_track_w[1] = imu_track_w[0]/1.2;
+    imu_track_w[2] = imu_track_w[1]/1.5;
+    imu_track_w[3] = imu_track_w[2]/2;
+    imu_track_w[4] = imu_track_w[3]/3;
+
+
+        //* 使用金字塔进行跟踪, 从顶层向下开始跟踪
 	for(int lvl=coarsestLvl; lvl>=0; lvl--)
 	{
 		Mat88 H; Vec8 b;
@@ -593,10 +639,19 @@ bool CoarseTracker::trackNewestCoarse(
             if(!setting_debugout_runquiet)
                 printf("INCREASING cutoff to %f (ratio is %f)!\n", setting_coarseCutoffTH*levelCutoffRepeat, resOld[5]);
 		}
-
+//cal 海森矩阵
 		calcGSSSE(lvl, H, b, refToNew_current, aff_g2l_current);
 
-		float lambda = 0.01;
+        Mat66 H_imu;
+        Vec6 b_imu;
+        Vec9 res_PVPhi;
+        double res_imu_old = 0;
+        if(lvl<=0){
+            res_imu_old = calcIMUResAndGS(H_imu, b_imu, refToNew_current, IMU_preintegrator,res_PVPhi,resOld[0],imu_track_w[lvl]);
+// 		    LOG(INFO)<<"res_imu_old: "<<res_imu_old<<" resOld[0]: "<<resOld[0]<<" resOld[1]: "<<resOld[0];
+        }
+
+		float lambda = 0.01;//LM算法
 
 		if(debugPrint)
 		{
@@ -615,8 +670,16 @@ bool CoarseTracker::trackNewestCoarse(
 		for(int iteration=0; iteration < maxIterations[lvl]; iteration++)
 		{
 			//[ ***step 2.1*** ] 计算增量
-			Mat88 Hl = H;
-			for(int i=0;i<8;i++) Hl(i,i) *= (1+lambda);
+			Mat88 Hl = H;//why 88
+
+            if(imu_use_flag&&imu_track_flag&&imu_track_ready&&lvl<=0)
+            {
+                Hl.block(0,0,6,6) = Hl.block(0,0,6,6) + H_imu;
+                b.block(0,0,6,1) = b.block(0,0,6,1) + b_imu.block(0,0,6,1);
+            }
+
+			for(int i=0;i<8;i++)
+			    Hl(i,i) *= (1+lambda);
 			Vec8 inc = Hl.ldlt().solve(-b);
 
 			if(setting_affineOptModeA < 0 && setting_affineOptModeB < 0)	// fix a, b
@@ -648,11 +711,12 @@ bool CoarseTracker::trackNewestCoarse(
 
 			//? lambda太小的化, 就给增量一个因子, 啥原理????
 			float extrapFac = 1;
-			if(lambda < lambdaExtrapolationLimit) extrapFac = sqrt(sqrt(lambdaExtrapolationLimit / lambda));
+			if(lambda < lambdaExtrapolationLimit)
+			    extrapFac = sqrt(sqrt(lambdaExtrapolationLimit / lambda));
 			inc *= extrapFac;
 
 			Vec8 incScaled = inc;
-			incScaled.segment<3>(0) *= SCALE_XI_ROT;
+			incScaled.segment<3>(0) *= SCALE_XI_ROT;//这两个变量值交换
 			incScaled.segment<3>(3) *= SCALE_XI_TRANS;
 			incScaled.segment<1>(6) *= SCALE_A;
 			incScaled.segment<1>(7) *= SCALE_B;
@@ -665,7 +729,12 @@ bool CoarseTracker::trackNewestCoarse(
 			aff_g2l_new.b += incScaled[7];
 
 			Vec6 resNew = calcRes(lvl, refToNew_new, aff_g2l_new, setting_coarseCutoffTH*levelCutoffRepeat);
-			
+
+            double res_imu_new;
+            if(lvl<=0){
+                res_imu_new = calcIMUResAndGS(H_imu, b_imu, refToNew_new, IMU_preintegrator,res_PVPhi,resNew[0],imu_track_w[lvl]);
+            }
+
 			bool accept = (resNew[0] / resNew[1]) < (resOld[0] / resOld[1]);  // 平均能量值小则接受
 
 			if(debugPrint)
@@ -686,7 +755,8 @@ bool CoarseTracker::trackNewestCoarse(
 			{
 				calcGSSSE(lvl, H, b, refToNew_new, aff_g2l_new);
 				resOld = resNew;
-				aff_g2l_current = aff_g2l_new;
+                res_imu_old = res_imu_new;
+                aff_g2l_current = aff_g2l_new;
 				refToNew_current = refToNew_new;
 				lambda *= 0.5;
 			}
@@ -706,8 +776,10 @@ bool CoarseTracker::trackNewestCoarse(
 //[ ***step 3*** ] 记录上一次残差, 光流指示, 如果调整过阈值则重新计算这一层
 		// set last residual for that level, as well as flow indicators.
 		lastResiduals[lvl] = sqrtf((float)(resOld[0] / resOld[1]));  // 上一次的残差
-		lastFlowIndicators = resOld.segment<3>(2);		//
-		if(lastResiduals[lvl] > 1.5*minResForAbort[lvl]) return false;  //! 如果算出来大于最好的直接放弃
+		lastFlowIndicators = resOld.segment<3>(2);		//每隔32,保存一次???
+
+		if(lastResiduals[lvl] > 1.5*minResForAbort[lvl])
+		    return false;  //! 如果算出来大于阈值,说明初始值不好,及时return,不浪费时间,最好的直接放弃
 
 
 		if(levelCutoffRepeat > 1 && !haveRepeated)
@@ -716,13 +788,13 @@ bool CoarseTracker::trackNewestCoarse(
 			haveRepeated=true;
 			printf("REPEAT LEVEL!\n");
 		}
-	}
+	}//* 使用金字塔进行跟踪, 从顶层向下开始跟踪
 
 	// set!
 	lastToNew_out = refToNew_current;
 	aff_g2l_out = aff_g2l_current;
 
-//[ ***step 4*** ] 判断优化失败情况
+//[ ***step 4*** ] 判断优化失败情况,求解的变化太大,不可能突变特别多,说明求解错误
 	if((setting_affineOptModeA != 0 && (fabsf(aff_g2l_out.a) > 1.2))
 	|| (setting_affineOptModeB != 0 && (fabsf(aff_g2l_out.b) > 200)))
 		return false;

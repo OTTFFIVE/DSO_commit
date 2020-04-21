@@ -74,7 +74,7 @@ ImmaturePoint::~ImmaturePoint()
  * * UPDATED -> point has been updated.
  * * SKIP -> point has not been updated.
  */
- //@ 使用深度滤波对未成熟点进行深度估计
+ //@ 使用深度滤波对未成熟点进行深度估计  极限搜索
 ImmaturePointStatus ImmaturePoint::traceOn(FrameHessian* frame,const Mat33f &hostToFrame_KRKi, const Vec3f &hostToFrame_Kt, const Vec2f& hostToFrame_affine, CalibHessian* HCalib, bool debugPrint)
 {
 	if(lastTraceStatus == ImmaturePointStatus::IPS_OOB) return lastTraceStatus;
@@ -85,10 +85,10 @@ ImmaturePointStatus ImmaturePoint::traceOn(FrameHessian* frame,const Mat33f &hos
 
 	if(debugPrint)
 		printf("trace pt (%.1f %.1f) from frame %d to %d. Range %f -> %f. t %f %f %f!\n",
-				u,v,
+				u, v,
 				host->shell->id, frame->shell->id,
 				idepth_min, idepth_max,
-				hostToFrame_Kt[0],hostToFrame_Kt[1],hostToFrame_Kt[2]);
+				hostToFrame_Kt[0], hostToFrame_Kt[1], hostToFrame_Kt[2]);
 
 	//	const float stepsize = 1.0;				// stepsize for initial discrete search.
 	//	const int GNIterations = 3;				// max # GN iterations
@@ -293,7 +293,7 @@ ImmaturePointStatus ImmaturePoint::traceOn(FrameHessian* frame,const Mat33f &hos
 
 
 		errors[i] = energy;
-		if(energy < bestEnergy)
+		if(energy < bestEnergy)//极线上对未成熟点的跟踪,每次增大一个步长,记录最好的位置
 		{
 			bestU = ptx; bestV = pty; bestEnergy = energy; bestIdx = i;
 		}
@@ -407,7 +407,7 @@ ImmaturePointStatus ImmaturePoint::traceOn(FrameHessian* frame,const Mat33f &hos
 	//! u = (pr[0] + Kt[0]*idepth) / (pr[2] + Kt[2]*idepth) ==> idepth = (u*pr[2] - pr[0]) / (Kt[0] - u*Kt[2])
 	//! v = (pr[1] + Kt[1]*idepth) / (pr[2] + Kt[2]*idepth) ==> idepth = (v*pr[2] - pr[1]) / (Kt[1] - v*Kt[2])
 	//* 取误差最大的
-	if(dx*dx>dy*dy)
+	if(dx*dx>dy*dy)//得到bestU　bestV　errorInPixel极线夹角范围
 	{
 		idepth_min = (pr[2]*(bestU-errorInPixel*dx) - pr[0]) / (hostToFrame_Kt[0] - hostToFrame_Kt[2]*(bestU-errorInPixel*dx));
 		idepth_max = (pr[2]*(bestU+errorInPixel*dx) - pr[0]) / (hostToFrame_Kt[0] - hostToFrame_Kt[2]*(bestU+errorInPixel*dx));

@@ -119,6 +119,17 @@ typedef Eigen::Matrix<double,8,4> Mat84;
 typedef Eigen::Matrix<double,4,8> Mat48;
 typedef Eigen::Matrix<double,4,4> Mat44;
 
+typedef Eigen::Matrix<double,9,9> Mat99;
+//typedef Eigen::Matrix<double,9,7> Mat97;
+typedef Eigen::Matrix<double,9,3> Mat93;
+//typedef Eigen::Matrix<double,12,12> Mat1212;
+//typedef Eigen::Matrix<double,11,11> Mat1111;
+//typedef Eigen::Matrix<double,15,15> Mat1515;
+//typedef Eigen::Matrix<double,17,17> Mat1717;
+//typedef Eigen::Matrix<double,16,16> Mat1616;
+//typedef Eigen::Matrix<double,10,15> Mat1015;
+//typedef Eigen::Matrix<double,9,15> Mat915;
+//typedef Eigen::Matrix<double,9,16> Mat916;
 
 typedef Eigen::Matrix<float, MAX_RES_PER_POINT,1> VecNRf;
 typedef Eigen::Matrix<float,12,1> Vec12f;

@@ -291,12 +291,16 @@ Vec4 FullSystem::trackNewCoarse(FrameHessian* fh)
 
 	FrameHessian* lastF = coarseTracker->lastRef;  // 参考帧
 
-	AffLight aff_last_2_l = AffLight(0,0);
+	AffLight aff_last_2_l = AffLight(0,0);  //this 代表????
 //[ ***step 1*** ] 设置不同的运动状态
 	std::vector<SE3,Eigen::aligned_allocator<SE3>> lastF_2_fh_tries;
-	printf("size: %d \n", lastF_2_fh_tries.size());
+	printf("size: %d \n", int(lastF_2_fh_tries.size()));
+
 	if(allFrameHistory.size() == 2)
-		for(unsigned int i=0;i<lastF_2_fh_tries.size();i++) lastF_2_fh_tries.push_back(SE3());  //? 这个size()不应该是0么
+    {
+        for(unsigned int i=0; i<lastF_2_fh_tries.size(); i++)
+            lastF_2_fh_tries.push_back(SE3());  //? 这个size()不应该是0么,上边有打印信息,后期核实
+    }
 	else
 	{
 		FrameShell* slast = allFrameHistory[allFrameHistory.size()-2];   // 上一帧
@@ -454,7 +458,7 @@ Vec4 FullSystem::trackNewCoarse(FrameHessian* fh)
 
 
 	if(coarseTracker->firstCoarseRMSE < 0)
-		coarseTracker->firstCoarseRMSE = achievedRes[0];  // 第一次跟踪的平均能量值
+		coarseTracker->firstCoarseRMSE = achievedRes[0];  // 第一次跟踪的平均能量值,第0层的残差,光流
 
     if(!setting_debugout_runquiet)
         printf("Coarse Tracker tracked ab = %f %f (exp %f). Res %f!\n", aff_g2l.a, aff_g2l.b, fh->ab_exposure, achievedRes[0]);
@@ -475,7 +479,7 @@ Vec4 FullSystem::trackNewCoarse(FrameHessian* fh)
 	}
 
 
-	return Vec4(achievedRes[0], flowVecs[0], flowVecs[1], flowVecs[2]);
+	return Vec4(achievedRes[0], flowVecs[0], flowVecs[1], flowVecs[2]);//第0层的残差，光流信息
 }
 
 //@ 利用新的帧 fh 对关键帧中的ImmaturePoint进行更新
@@ -503,7 +507,7 @@ void FullSystem::traceNewCoarse(FrameHessian* fh)
 
 		for(ImmaturePoint* ph : host->immaturePoints)
 		{
-			ph->traceOn(fh, KRKi, Kt, aff, &Hcalib, false );
+			ph->traceOn(fh, KRKi, Kt, aff, &Hcalib, false );//就这一个函数,更新深度值
 			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_GOOD) trace_good++;
 			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_BADCONDITION) trace_badcondition++;
 			if(ph->lastTraceStatus==ImmaturePointStatus::IPS_OOB) trace_oob++;
@@ -863,7 +867,12 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 	fh->ab_exposure = image->exposure_time;
     fh->makeImages(image->image, &Hcalib);
 
-
+    if(allFrameHistory.size()>0){
+        fh->velocity = fh->shell->velocity = allFrameHistory.back()->velocity;
+        fh->bias_g = fh->shell->bias_g = allFrameHistory.back()->bias_g + allFrameHistory.back()->delta_bias_g;
+        fh->bias_a = fh->shell->bias_a = allFrameHistory.back()->bias_a + allFrameHistory.back()->delta_bias_a;
+    }
+    allFrameHistory.push_back(shell);
 
 	//[ ***step 4*** ] 进行初始化
 	if(!initialized)
@@ -873,7 +882,10 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 		if(coarseInitializer->frameID<0)	// first frame set. fh is kept by coarseInitializer.
 		{
 			coarseInitializer->setFirst(&Hcalib, fh);
-		}
+
+			//初始化IMU的重力方向
+            initFirstFrameAndIMU(fh);
+        }
 		else if(coarseInitializer->trackFrame(fh, outputWrapper))	// if SNAPPED
 		{
 		//[ ***step 4.2*** ] 跟踪成功, 完成初始化
@@ -895,13 +907,15 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 		// =========================== SWAP tracking reference?. =========================
 		if(coarseTracker_forNewKF->refFrameID > coarseTracker->refFrameID)
 		{
-			// 交换参考帧和当前帧的coarseTracker
+			// 交换参考帧和当前帧的coarseTracker,防止多线程访问和赋值造成的问题.
 			boost::unique_lock<boost::mutex> crlock(coarseTrackerSwapMutex);
-			CoarseTracker* tmp = coarseTracker; coarseTracker=coarseTracker_forNewKF; coarseTracker_forNewKF=tmp;
+			CoarseTracker* tmp = coarseTracker;
+			coarseTracker=coarseTracker_forNewKF;
+			coarseTracker_forNewKF=tmp;
 		}
 
 		//TODO 使用旋转和位移对像素移动的作用比来判断运动状态
-		Vec4 tres = trackNewCoarse(fh);
+		Vec4 tres = trackNewCoarse(fh);//第0层残差和三维光流信息
 		if(!std::isfinite((double)tres[0]) || !std::isfinite((double)tres[1]) || !std::isfinite((double)tres[2]) || !std::isfinite((double)tres[3]))
         {
             printf("Initial Tracking failed: LOST!\n");
@@ -920,10 +934,10 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 			Vec2 refToFh=AffLight::fromToVecExposure(coarseTracker->lastRef->ab_exposure, fh->ab_exposure,
 					coarseTracker->lastRef_aff_g2l, fh->shell->aff_g2l);
 
-			// BRIGHTNESS CHECK
+			// BRIGHTNESS CHECK　两种方式确定关键帧
 			needToMakeKF = allFrameHistory.size()== 1 ||
 					setting_kfGlobalWeight*setting_maxShiftWeightT *  sqrtf((double)tres[1]) / (wG[0]+hG[0]) +  // 平移像素位移
-					setting_kfGlobalWeight*setting_maxShiftWeightR *  sqrtf((double)tres[2]) / (wG[0]+hG[0]) + 	//TODO 旋转像素位移, 设置为0???
+					setting_kfGlobalWeight*setting_maxShiftWeightR *  sqrtf((double)tres[2]) / (wG[0]+hG[0]) + 	//TODO 旋转像素位移, setting_maxShiftWeightR设置为0???
 					setting_kfGlobalWeight*setting_maxShiftWeightRT * sqrtf((double)tres[3]) / (wG[0]+hG[0]) +	// 旋转+平移像素位移
 					setting_kfGlobalWeight*setting_maxAffineWeight * fabs(logf((float)refToFh[0])) > 1 ||		// 光度变化大
 					2*coarseTracker->firstCoarseRMSE < tres[0];		// 误差能量变化太大(最初的两倍)
@@ -943,6 +957,58 @@ void FullSystem::addActiveFrame( ImageAndExposure* image, int id )
 		deliverTrackedFrame(fh, needToMakeKF);
 		return;
 	}
+}
+
+void FullSystem::initFirstFrameAndIMU(FrameHessian* fh)
+{
+    std::cout<<"* get into FullSystem::initFirstFrameAndIMU(FrameHessian* fh) \n";
+    int index;
+    if(imu_time_stamp.size()>0)
+    {
+        for(int i=0;i<imu_time_stamp.size();++i)
+        {
+            if(imu_time_stamp[i]>=pic_time_stamp[fh->shell->incoming_id]||fabs(imu_time_stamp[i]-pic_time_stamp[fh->shell->incoming_id])<0.001) {
+                index = i;
+                break;
+            }
+        }
+    }
+
+    Vec3 g_b = Vec3::Zero();    //惯性系body下的加速度
+    Vec3 g_w;   //world下的加速度
+    g_w << 0, 0, -1;
+    for(int j=0; j<40; j++) {  //两帧图像之间的IMU有40个　求平均方向
+        g_b = g_b + m_acc[index-j];
+    }
+    std::cout<<"g_b: \n" << g_b <<std::endl;
+    double norm = g_b.norm();   //二范数，欧式距离
+    std::cout<<"g_b.norm(): \n" << g_b.norm() <<std::endl;
+    g_b = -g_b/norm;
+    Vec3 g_c = T_BC.inverse().rotationMatrix()*g_b;     //相机坐标系c下的加速度
+
+    norm = g_c.norm();
+    g_c = g_c/norm;
+    Vec3 n = Sophus::SO3::hat(g_c)*g_w;     //为了计算sin_theta = n.norm();
+
+    std::cout<<"g_c: \n" << g_c <<std::endl;
+//    std::cout<<"* hat g_c: \n" << Sophus::SO3::hat(g_c) <<std::endl;
+//    std::cout<<"* Vec3 n: \n" << n <<std::endl;
+
+    norm = n.norm();
+    n = n/norm;
+    double sin_theta = norm;
+    double cos_theta = g_c.dot(g_w);//向量的点乘
+//    std::cout<<"* cos_theta: " << cos_theta;
+
+    //罗德里格斯公式
+    Mat33 R_wc = cos_theta*Mat33::Identity()+(1-cos_theta)*n*n.transpose()+sin_theta*Sophus::SO3::hat(n);
+//    std::cout<<"R_wc: \n"<< R_wc <<std::endl;
+
+    SE3 T_wc(R_wc,Vec3::Zero());
+    std::cout<<"first pose T_wc: \n"<< T_wc.matrix() <<std::endl;
+
+    fh->shell->camToWorld = T_wc;
+    fh->setEvalPT_scaled(fh->shell->camToWorld.inverse(), fh->shell->aff_g2l);
 }
 
 //@ 把跟踪的帧, 给到建图线程, 设置成关键帧或非关键帧

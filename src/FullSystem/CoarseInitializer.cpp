@@ -86,7 +86,7 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 	// 新的一帧, 在跟踪之前显示的
     for(IOWrap::Output3DWrapper* ow : wraps)
         ow->pushLiveFrame(newFrameHessian);
-
+//这是什么迭代??金字塔???
 	int maxIterations[] = {5,5,10,30,50};
 
 
@@ -100,16 +100,16 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 	if(!snapped) //! snapped应该指的是位移足够大了，不够大就重新优化
 	{
 		// 初始化
-		thisToNext.translation().setZero();
+		thisToNext.translation().setZero();//把旋转设为0,只保留位移
 		for(int lvl=0;lvl<pyrLevelsUsed;lvl++)
 		{
 			int npts = numPoints[lvl];
 			Pnt* ptsl = points[lvl];
 			for(int i=0;i<npts;i++)
 			{
-				ptsl[i].iR = 1;
-				ptsl[i].idepth_new = 1;
-				ptsl[i].lastHessian = 0;
+				ptsl[i].iR = 1;//均值
+				ptsl[i].idepth_new = 1;//采样值
+				ptsl[i].lastHessian = 0;//协方差
 			}
 		}
 	}
@@ -164,7 +164,7 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 		{
 //[ ***step 5.1*** ] 计算边缘化后的Hessian矩阵, 以及一些骚操作
 			Mat88f Hl = H;
-			for(int i=0;i<8;i++) Hl(i,i) *= (1+lambda); // 这不是LM么,论文说没用, 嘴硬
+			for(int i=0;i<8;i++) Hl(i,i) *= (1+lambda); // 这不是LM么,论文说没用
 			// 舒尔补, 边缘化掉逆深度状态
 			Hl -= Hsc*(1/(1+lambda)); // 因为dd必定是对角线上的, 所以也乘倒数
 			Vec8f bl = b - bsc*(1/(1+lambda));
@@ -239,7 +239,7 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
 			else
 			{
 				fails++;
-				lambda *= 4;
+				lambda *= 4;//类似于最速下降
 				if(lambda > 10000) lambda = 10000;
 			}
 
@@ -282,7 +282,7 @@ bool CoarseInitializer::trackFrame(FrameHessian* newFrameHessian, std::vector<IO
     debugPlot(0,wraps);
 
 
-	// 位移足够大, 再优化5帧才行
+	// snapped位移足够大, 再优化5帧才行，初始化比较慢，不如orb
 	return snapped && frameID > snappedAt+5;
 }
 
@@ -391,7 +391,7 @@ Vec3f CoarseInitializer::calcResAndGS(
         VecNRf dp5;
         VecNRf dp6;
         VecNRf dp7;
-        VecNRf dd;
+        VecNRf dd;//逆深度的导数
         VecNRf r;
 		JbBuffer_new[i].setZero();  // 10*1 向量
 
@@ -595,6 +595,7 @@ Vec3f CoarseInitializer::calcResAndGS(
 		JbBuffer_new[i][9] = 1/(1+JbBuffer_new[i][9]);  // 取逆是协方差，做权重
 		//* 9做权重, 计算的是舒尔补项!
 		//! dp*dd*(dd^2)^-1*dd*dp
+		//最后一位是权重
 		acc9SC.updateSingleWeighted(
 				(float)JbBuffer_new[i][0],(float)JbBuffer_new[i][1],(float)JbBuffer_new[i][2],(float)JbBuffer_new[i][3],
 				(float)JbBuffer_new[i][4],(float)JbBuffer_new[i][5],(float)JbBuffer_new[i][6],(float)JbBuffer_new[i][7],
@@ -707,6 +708,7 @@ void CoarseInitializer::optReg(int lvl)
 		}
 
 		// 与最近点中位数进行加权获得新的iR
+		//邻近的点更加平滑，符合高斯分布
 		if(nnn > 2)
 		{
 			std::nth_element(idnn,idnn+nnn/2,idnn+nnn); // 获得中位数

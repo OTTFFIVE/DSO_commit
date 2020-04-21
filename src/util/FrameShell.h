@@ -55,6 +55,11 @@ public:
 	int marginalizedAt;			//!< 被边缘化时最新关键帧的id
 	double movedByOpt;			//!< 边缘化时得到的距离线性化点位姿的6维模
 
+	Vec3 velocity = Vec3::Zero();
+    Vec3 bias_g = Vec3::Zero();
+    Vec3 bias_a = Vec3::Zero();
+    Vec3 delta_bias_g = Vec3::Zero();
+    Vec3 delta_bias_a = Vec3::Zero();
 
 	inline FrameShell()
 	{

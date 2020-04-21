@@ -163,6 +163,15 @@ struct FrameHessian
 	Vec10 step_backup;			//!< 上一次的增量备份
 	Vec10 state_backup;			//!< 上一次状态的备份
 
+	//对应的IMU信息
+    Vec9 step_imu = Vec9::Zero();
+
+    Vec3 velocity = Vec3::Zero();
+    Vec3 delta_bias_g = Vec3::Zero();
+    Vec3 delta_bias_a = Vec3::Zero();
+    Vec3 bias_g = Vec3::Zero();
+    Vec3 bias_a = Vec3::Zero();
+
 	//内联提高效率, 返回上面的值
     EIGEN_STRONG_INLINE const SE3 &get_worldToCam_evalPT() const {return worldToCam_evalPT;}
     EIGEN_STRONG_INLINE const Vec10 &get_state_zero() const {return state_zero;}

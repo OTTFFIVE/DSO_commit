@@ -46,6 +46,7 @@ set(dso_SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/src/FullSystem/ImmaturePoint.cpp
   ${PROJECT_SOURCE_DIR}/src/FullSystem/HessianBlocks.cpp
   ${PROJECT_SOURCE_DIR}/src/FullSystem/PixelSelector2.cpp
+  ${PROJECT_SOURCE_DIR}/src/FullSystem/IMUPreintegrator.cpp
   ${PROJECT_SOURCE_DIR}/src/OptimizationBackend/EnergyFunctional.cpp
   ${PROJECT_SOURCE_DIR}/src/OptimizationBackend/AccumulatedTopHessian.cpp
   ${PROJECT_SOURCE_DIR}/src/OptimizationBackend/AccumulatedSCHessian.cpp

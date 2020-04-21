@@ -31,6 +31,7 @@
 #include "util/settings.h"
 #include "OptimizationBackend/MatrixAccumulators.h"
 #include "IOWrapper/Output3DWrapper.h"
+#include "FullSystem/IMUPreintegrator.h"
 
 
 
@@ -56,6 +57,12 @@ public:
 
 	void setCoarseTrackingRef(
 			std::vector<FrameHessian*> frameHessians);
+
+    void setCTRefForFirstFrame(
+            std::vector<FrameHessian*> frameHessians);
+
+    void setCoarseTrackingRef(
+            std::vector<FrameHessian*> frameHessians, FrameHessian* fh_right, CalibHessian Hcalib);
 
 	void makeK(
 			CalibHessian* HCalib);
@@ -95,6 +102,8 @@ private:
 	float* weightSums[PYR_LEVELS];
 	float* weightSums_bak[PYR_LEVELS];
 
+    double calcIMUResAndGS(Mat66 &H_out, Vec6 &b_out, SE3 &refToNew, const IMUPreintegrator &IMU_preintegrator,
+                           Vec9 &res_PVPhi, double PointEnergy, double imu_track_weight);
 
 	Vec6 calcResAndGS(int lvl, Mat88 &H_out, Vec8 &b_out, const SE3 &refToNew, AffLight aff_g2l, float cutoffTH);
 	Vec6 calcRes(int lvl, const SE3 &refToNew, AffLight aff_g2l, float cutoffTH);

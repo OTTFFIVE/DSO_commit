@@ -53,8 +53,10 @@
 
 std::string vignette = "";
 std::string gammaCalib = "";
-std::string source = "";
+std::string source = "";//picture
 std::string calib = "";
+std::string imu_info = "";
+std::string pic_timestamp = "";
 double rescale = 1;
 bool reverse = false;
 bool disableROS = false;
@@ -180,7 +182,6 @@ void parseArgument(char* arg)
 		return;
 	}
 
-
 	if(1==sscanf(arg,"rec=%d",&option))
 	{
 		if(option==0)
@@ -190,8 +191,6 @@ void parseArgument(char* arg)
 		}
 		return;
 	}
-
-
 
 	if(1==sscanf(arg,"noros=%d",&option))
 	{
@@ -213,6 +212,7 @@ void parseArgument(char* arg)
 		}
 		return;
 	}
+
 	if(1==sscanf(arg,"reverse=%d",&option))
 	{
 		if(option==1)
@@ -222,6 +222,7 @@ void parseArgument(char* arg)
 		}
 		return;
 	}
+
 	if(1==sscanf(arg,"nogui=%d",&option))
 	{
 		if(option==1)
@@ -231,6 +232,7 @@ void parseArgument(char* arg)
 		}
 		return;
 	}
+
 	if(1==sscanf(arg,"nomt=%d",&option))
 	{
 		if(option==1)
@@ -240,6 +242,7 @@ void parseArgument(char* arg)
 		}
 		return;
 	}
+
 	if(1==sscanf(arg,"prefetch=%d",&option))
 	{
 		if(option==1)
@@ -249,12 +252,14 @@ void parseArgument(char* arg)
 		}
 		return;
 	}
+
 	if(1==sscanf(arg,"start=%d",&option))
 	{
 		start = option;
 		printf("START AT %d!\n",start);
 		return;
 	}
+
 	if(1==sscanf(arg,"end=%d",&option))
 	{
 		end = option;
@@ -275,6 +280,40 @@ void parseArgument(char* arg)
 		printf("loading calibration from %s!\n", calib.c_str());
 		return;
 	}
+
+    if(1==sscanf(arg,"imu_info=%s",buf))
+    {
+        imu_info = buf;
+        printf("loading imu_info from %s!\n", imu_info.c_str());
+        return;
+    }
+
+    if(1==sscanf(arg,"groundtruth=%s",buf))
+    {
+        gt_path = buf;
+        printf("loading groundtruth from %s!\n", gt_path.c_str());
+        return;
+    }
+
+    if(1==sscanf(arg,"imu_data=%s",buf))
+    {
+        imu_path = buf;
+        printf("loading imu_data from %s!\n", imu_path.c_str());
+        return;
+    }
+
+    if(1==sscanf(arg,"pic_timestamp=%s",buf))
+    {
+        pic_timestamp = buf;
+        printf("loading pic_timestamp from %s!\n", pic_timestamp.c_str());
+        return;
+    }
+
+    if(1==sscanf(arg,"savefile_tail=%s",buf))
+    {
+        savefile_tail = buf;
+        return;
+    }
 
 	if(1==sscanf(arg,"vignette=%s",buf))
 	{
@@ -325,6 +364,13 @@ void parseArgument(char* arg)
 		return;
 	}
 
+    if(1==sscanf(arg,"pic_timestamp=%s",buf))
+    {
+        pic_timestamp = buf;
+        printf("loading pic_timestamp from %s!\n", pic_timestamp.c_str());
+        return;
+    }
+
 	if(1==sscanf(arg,"mode=%d",&option))
 	{
 
@@ -354,13 +400,204 @@ void parseArgument(char* arg)
 	printf("could not parse argument \"%s\"!!!!\n", arg);
 }
 
+//q(x,y,z,w)
+Eigen::Matrix3d quaternionToRotation(const Eigen::Vector4d& q)
+{
+    Eigen::Matrix3d R = Eigen::Matrix3d::Zero();
 
+    R(0, 0) = 1-2.0*q(1)*q(1)-2.0*q(2)*q(2);
+    R(0, 1) = 2.0*(q(0)*q(1) - q(2)*q(3));
+    R(0, 2) = 2.0*(q(0)*q(2) + q(1)*q(3));
+
+    R(1, 0) = 2.0*(q(0)*q(1) + q(2)*q(3));
+    R(1, 1) = -1*q(0)*q(0) + q(1)*q(1) - q(2)*q(2) + q(3)*q(3);//-x^2+y^2-z^2+w^2??? 查找资料是：1-2*x^2-2*z^2
+    R(1, 2) = 2.0*(q(1)*q(2) - q(0)*q(3));
+
+    R(2, 0) = 2.0*(q(0)*q(2) - q(1)*q(3));
+    R(2, 1) = 2.0*(q(1)*q(2) + q(0)*q(3));
+    R(2, 2) = -1*q(0)*q(0) - q(1)*q(1) + q(2)*q(2) + q(3)*q(3);//-x^2-y^2+z^2+w^2??? 查找资料是：1-2*x^2-2*y^2
+    return R;
+}
+
+void getEuRocGroundTruth()
+{
+    std::ifstream inf;
+
+    if(gt_path.size() == 0)
+        return;
+    inf.open(gt_path);
+    std::string sline;
+    std::getline(inf,sline);//第一行是注释信息
+    while(std::getline(inf,sline))
+    {
+        std::istringstream ss(sline);
+        Vec4 q4;
+        Vec3 t;
+        Vec3 v;
+        Vec3 bias_g;
+        Vec3 bias_a;
+        double time;
+        ss>>time;
+        time = time/1e9;
+        char temp;
+        for(int i=0;i<3;++i){
+            ss>>temp;
+            ss>>t(i);
+        }
+        ss>>temp;
+        ss>>q4(3);
+        for(int i=0;i<3;++i){
+            ss>>temp;
+            ss>>q4(i);
+        }
+        for(int i=0;i<3;++i){
+            ss>>temp;
+            ss>>v(i);
+        }
+        for(int i=0;i<3;++i){
+            ss>>temp;
+            ss>>bias_g(i);
+        }
+        for(int i=0;i<3;++i){
+            ss>>temp;
+            ss>>bias_a(i);
+        }
+        Eigen::Matrix3d R_wb = quaternionToRotation(q4);
+        SE3 pose0(R_wb,t);
+        gt_pose.push_back(pose0);
+        gt_time_stamp.push_back(time);
+        gt_velocity.push_back(v);
+        gt_bias_g.push_back(bias_g);
+        gt_bias_a.push_back(bias_a);
+//        std::cout <<"bias_a = \n"<< bias_a << std::endl;
+    }
+    inf.close();
+}
+
+void getIMUInfo()
+{
+    std::ifstream inf;
+    inf.open(imu_info);
+    std::string sline;
+    int line = 0;
+    Mat33 R;
+    Vec3 t;
+    Vec4 noise;
+
+    while(line<3&&std::getline(inf,sline))
+    {
+        std::istringstream ss(sline);
+        for(int i=0;i<3;++i){
+            ss>>R(line,i);
+        }
+        ss>>t(line);
+        ++line;
+
+    }
+    std::getline(inf,sline);
+    ++line;
+    while(line<8&&std::getline(inf,sline))
+    {
+        std::istringstream ss(sline);
+        ss>>noise(line-4);
+        ++line;
+    }
+
+    SE3 temp(R,t);
+    T_BC = temp;
+
+    GyrCov = Mat33::Identity()*noise(0)*noise(0)/0.005;
+    AccCov = Mat33::Identity()*noise(1)*noise(1)/0.005;
+    GyrRandomWalkNoise = Mat33::Identity()*noise(2)*noise(2);
+    AccRandomWalkNoise = Mat33::Identity()*noise(3)*noise(3);
+
+    std::cout<<"T_BC: \n"<<T_BC.matrix()<<std::endl;
+    std::cout<<"noise: "<<noise.transpose()<<std::endl;
+    inf.close();
+}
+
+void getIMUDataEuRoc()
+{
+    std::ifstream inf;
+    inf.open(imu_path);
+    std::string sline;
+    std::getline(inf,sline);
+    while(std::getline(inf,sline))
+    {
+        std::istringstream ss(sline);
+        Vec3 gyro,acc;
+        double time;
+        ss>>time;
+        time = time/1e9;
+        char temp;
+        for(int i=0;i<3;++i){
+            ss>>temp;
+            ss>>gyro(i);
+        }
+        for(int i=0;i<3;++i){
+            ss>>temp;
+            ss>>acc(i);
+        }
+        m_gry.push_back(gyro);
+        m_acc.push_back(acc);
+        imu_time_stamp.push_back(time);
+    }
+    inf.close();
+}
+
+void getPicTimestamp()
+{
+    std::ifstream inf;
+    inf.open(pic_timestamp);
+    std::string sline;
+    std::getline(inf, sline);
+    while(std::getline(inf, sline))
+    {
+        std::istringstream ss(sline);
+        double time;
+        ss>>time;
+        time = time/1e9;
+        pic_time_stamp.push_back(time);
+    }
+    inf.close();
+}
 
 int main( int argc, char** argv )
 {
+    //他两是干啥的?? 在读参数的地方还没加
+//    imu_weight = 3;
+//    imu_weight_tracker = 0.1;
+
 	//setlocale(LC_ALL, "");
 	for(int i=1; i<argc; i++)
 		parseArgument(argv[i]);
+
+    if(gt_path.size()>0)
+        getEuRocGroundTruth();
+    //load 外参数T_BC, GyrCov, AccCov, GyrRandomWalkNoise, AccRandomWalkNoise
+    if(imu_info.size()>0)
+        getIMUInfo();
+
+    getIMUDataEuRoc();
+    getPicTimestamp();
+
+    //等用到再加上
+//    G_norm = 9.81;
+//    imu_use_flag = true;
+//    imu_track_flag = true;
+//    use_optimize = true;
+//    imu_track_ready = false;
+//    use_Dmargin = true;
+//    setting_initialIMUHessian = 0;
+//    setting_initialScaleHessian = 0;
+//    setting_initialbaHessian = 0;
+//    setting_initialbgHessian = 0;
+//    imu_lambda = 5;
+//    d_min = sqrt(1.1);
+//    setting_margWeightFac_imu = 0.25;
+
+
+    double time_start;
 
 	// hook crtl+C.
 	boost::thread exThread = boost::thread(exitThread);
@@ -443,7 +680,7 @@ int main( int argc, char** argv )
         clock_t started = clock();
         double sInitializerOffset=0;
 
-
+        //sometime from ii=30
         for(int ii=0;ii<(int)idsToPlay.size(); ii++)
         {
             if(!fullSystem->initialized)	// if not initialized: reset start time.
